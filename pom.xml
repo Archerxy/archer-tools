@@ -21,16 +21,19 @@
 	  <groupId>com.archer</groupId>
 	  <artifactId>archer-math</artifactId>
 	  <version>1.1.2</version>
+	  <!-- url=https://github.com/Archerxy/archer-math/releases/tag/v1.1.2 -->
 	</dependency>
   	<dependency>
 	  <groupId>com.archer</groupId>
 	  <artifactId>xjson</artifactId>
 	  <version>1.1.1</version>
+	  <!-- url=https://github.com/Archerxy/archer-xjson/releases/tag/v1.1.1 -->
 	</dependency>
   	<dependency>
 	  <groupId>com.archer</groupId>
 	  <artifactId>archer-net</artifactId>
 	  <version>1.1.4</version>
+	  <!-- url=https://github.com/Archerxy/archer-net/releases/tag/v1.1.4 -->
 	</dependency>
   </dependencies>
   
