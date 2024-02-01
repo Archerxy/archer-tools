@@ -5,11 +5,11 @@ import java.util.Arrays;
 
 public class NumberUtil {
 	
-	public static final int DEFAULT_BYTE = 0x7f;
+	private static final int DEFAULT_BYTE = 0x7f;
 	
-	public static final int[] hexToByteTable = new int[128];
+	private static final int[] hexToByteTable = new int[128];
 	
-	public static final char[] byteToHexTable = {
+	private static final char[] byteToHexTable = {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
     };
@@ -95,23 +95,23 @@ public class NumberUtil {
 
 	public static byte[] intToBytes(int num) {
 		byte[] bytes = new byte[4];
-		bytes[0] = (byte) (0xff & (num >> 0));
-		bytes[1] = (byte) (0xff & (num >> 8));
-		bytes[2] = (byte) (0xff & (num >> 16));
-		bytes[3] = (byte) (0xff & (num >> 24));
+		bytes[0] = (byte) (0xff & (num >> 24));
+		bytes[1] = (byte) (0xff & (num >> 16));
+		bytes[2] = (byte) (0xff & (num >> 8));
+		bytes[3] = (byte) (0xff & (num));
 		return bytes;
 	}
 
-	public static int byteToInt(byte[] bytes) {
+	public static int bytesToInt(byte[] bytes) {
 		int num = 0;
 		int temp;
-		temp = (0x000000ff & (bytes[0])) << 0;
+		temp = (0x000000ff & (bytes[0])) << 24;
 		num = num | temp;
-		temp = (0x000000ff & (bytes[1])) << 8;
+		temp = (0x000000ff & (bytes[1])) << 16;
 		num = num | temp;
-		temp = (0x000000ff & (bytes[2])) << 16;
+		temp = (0x000000ff & (bytes[2])) << 8;
 		num = num | temp;
-		temp = (0x000000ff & (bytes[3])) << 24;
+		temp = (0x000000ff & (bytes[3]));
 		num = num | temp;
 		return num;
 	}
@@ -119,10 +119,47 @@ public class NumberUtil {
 	public static byte[] longToBytes(long num) {
 		byte[] bytes = new byte[8];
 		for (int i = 0; i < 8; i++) {
-			bytes[i] = (byte) (0xff & (num >> (i * 8)));
+			bytes[i] = (byte) (0xff & (num >> ((7 - i) * 8)));
 		}
 
 		return bytes;
+	}
+	
+	public static byte[] intArrToBytes(int[] ints) {
+        byte[] bs = new byte[ints.length * 4];
+        for(int i = 0; i < ints.length; i++) {
+        	bs[i*4] = (byte) (ints[i] >> 24);
+        	bs[i*4 + 1] = (byte) ((ints[i] >> 16) & 0xff);
+        	bs[i*4 + 1] = (byte) ((ints[i] >> 8) & 0xff);
+        	bs[i*4 + 1] = (byte) (ints[i] & 0xff);
+        }
+        return bs;
+	}
+	
+	public static int[] bytesToIntArr(byte[] bs) {
+		int off = bs.length % 4, s = 0, len = bs.length >> 2;
+		int[] ints;
+		if(off == 0) {
+			ints = new int[len];
+		} else {
+			ints = new int[len + 1];
+			s = 1;
+			for(int i = 0; i < off; i++) {
+				int bi = bs[i];
+				bi = bi < 0 ? bi + 256 : bi;
+				ints[0] |= bi << ((off - i - 1) << 3);
+			}
+		}
+		for(int i = s; i < ints.length; i++) {
+			int pi = (i - s) << 2;
+			int i0 = bs[pi + off], i1 = bs[pi + off + 1], i2 = bs[pi + off + 2], i3 = bs[pi + off + 3];
+			i0 = i0 < 0 ? i0 + 256 : i0;
+			i1 = i1 < 0 ? i1 + 256 : i1;
+			i2 = i2 < 0 ? i2 + 256 : i2;
+			i3 = i3 < 0 ? i3 + 256 : i3;
+			ints[i] = (i0 << 24) | (i1 << 16) | (i2 << 8) | i3;
+		}
+		return ints;
 	}
 }
 

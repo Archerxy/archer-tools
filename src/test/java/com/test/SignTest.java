@@ -1,7 +1,13 @@
-package com.archer.tools.algorithm.signature;
+package com.test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+
+import com.test.sig.EcCurve;
+import com.test.sig.Ecdsa;
+import com.test.sig.SM2;
+import com.archer.tools.algorithm.signature.Signature;
+import com.archer.tools.util.NumberUtil;
 
 public class SignTest {
 	
@@ -144,10 +150,12 @@ public class SignTest {
 		byte[] rs = sig.sign(d, d);
 		System.out.println("ec sig1 = "+Arrays.toString(rs));
 		System.out.println("ec ver1 = "+sig.verify(pk, d, rs));
+		System.out.println("ec ver2 = "+ec.verify(pk, d, rs));
 		
 		byte[] result2 = ec.sign(d, d);
 		System.out.println("ec sig2 = "+Arrays.toString(result2));
 		System.out.println("ec ver2 = "+ec.verify(pk, d, rs));
+		System.out.println("ec ver1 = "+sig.verify(pk, d, rs));
 	}
 	
 	public static  void sm2Test() {
@@ -162,10 +170,12 @@ public class SignTest {
 		byte[] rs = sig.sign(d, d);
 		System.out.println("sm2 sig1 = "+Arrays.toString(rs));
 		System.out.println("sm2 ver1 = "+sig.verify(pk, d, rs));
+		System.out.println("sm2 ver2 = "+sm2.verify(pk, d, rs));
 		
 		byte[] sm2RS = sm2.sign(d, d);
 		System.out.println("sm2 sig2 = "+Arrays.toString(sm2RS));
 		System.out.println("sm2 ver2 = "+sm2.verify(pk, d, rs));
+		System.out.println("sm2 ver1 = "+sig.verify(pk, d, rs));
 	}
 	
 	public static void signCostTest() {
@@ -222,27 +232,32 @@ public class SignTest {
 		SM2 sm2 = new SM2();
 		Signature sig = new Signature(Signature.PopularCurve.sm2p256v1);
 		
-		int total = 100;
+		int total = 10000;
 		
 		for(int i =0; i < total; i++) {
 			byte[] rs = sig.sign(d, d);
 			if(!sig.verify(pk, d, rs)) {
-				System.out.println("sig sig failed.");
+				System.out.println(i + " rs = " + NumberUtil.bytesToHexStr(rs));
+				System.out.println("sig sig failed. i = " + i);
 			}
 			if(!sm2.verify(pk, d, rs)) {
-				System.out.println("sig sm2 failed.");
+				System.out.println("sig sm2 failed. i = " + i);
 			}
 		}
-		
-		for(int i =0; i < total; i++) {
-			byte[] rs = sm2.sign(d, d);
-			if(!sm2.verify(pk, d, rs)) {
-				System.out.println(i + " sm2 sm2 failed.");
-			}
-			if(!sig.verify(pk, d, rs)) {
-				System.out.println(i + " sm2 sig failed.");
-			}
-		}
+//		7c914e3d810a828d128a10403ff44d20085fe04924623fafff90d3a989e1a5fbb478ec9bc72d8d92ccce53b68b8fdacd8312d6ac3bdf97fd17f853332d4ae197
+//		df2c683ecd0d3506b18b0071952aedf04874379b09ce628a89bd08cdf5ce666fc6dc2c2d2d8cbfb102add1c3d69a4fb929a49dfb1f4bf955c50e15c03c8911e1
+//		3d5b499abed44e2cfb47f9fbd4ad1a3665337f75e87bd6f1efc172def832924c0bdf8e5ebef95cdf29068e6f9a032e0ca5bfe566f75a919513eb5a8870f5c47a
+//		System.out.println(NumberUtil.bytesToHexStr(pk));
+//		for(int i =0; i < total; i++) {
+//			byte[] rs = sm2.sign(d, d);
+//			if(!sm2.verify(pk, d, rs)) {
+//				System.out.println(i + " rs = " + NumberUtil.bytesToHexStr(rs));
+//				System.out.println(i + " sm2 sm2 failed.");
+//			}
+//			if(!sig.verify(pk, d, rs)) {
+//				System.out.println(i + " sm2 sig failed.");
+//			}
+//		}
 		
 //		long t0 = System.currentTimeMillis();
 //		for(int i =0; i < total; i++) {
@@ -266,21 +281,25 @@ public class SignTest {
 		System.out.println();
 	}
 	
-	/**
-ec sig1 = [-4, 66, -83, 0, -48, 4, -71, 51, -27, -114, -20, 23, -6, -26, -7, -10, -51, -60, 40, 123, -20, -101, -48, -27, -59, 78, -28, -37, 39, -49, -11, -110, 104, -94, -35, 8, 43, -92, -40, -108, 45, 63, 94, 3, 35, 109, -25, -69, 78, -126, -74, 16, -33, -14, 92, -126, 42, 60, -117, 108, -15, 68, 52, -107]
-ec ver1 = true
-ec sig2 = [-11, 18, -55, 3, 20, 78, -113, -83, -13, -121, 84, 50, 101, 120, -29, 46, -115, 117, 108, 18, -40, -12, -4, 51, -4, 17, 53, -59, -34, 106, -108, 92, 44, 23, 1, -108, -21, 73, -30, -125, 22, -54, -103, 54, 69, -123, 114, -5, -69, 40, 104, 1, -76, -44, -5, -69, -37, -71, 99, -58, 83, -124, -15, -109, 0]
-ec ver2 = true
-sm2 sig1 = [71, -62, -60, -124, -109, -72, -36, 49, -89, 79, -70, -88, 89, -43, 0, 97, 96, 86, -26, 117, 37, 49, 114, -124, 25, 70, -12, 34, -96, -32, 65, -19, -5, -40, 45, -120, -50, 60, -61, 112, -77, -74, -10, 75, -14, 48, -102, 81, 30, -27, -41, -53, -89, 43, 98, 36, -40, -72, -112, -68, -13, 2, 111, -25]
-sm2 ver1 = true
-sm2 sig2 = [91, 3, 75, 117, 25, 84, -5, -96, 47, 125, 82, 110, -36, -45, 93, -12, -9, -11, 40, -97, 8, 43, 81, -114, 97, 87, 40, -11, -46, -54, 44, -27, 67, -28, -118, -41, -116, 100, 62, 6, -49, 31, -69, 32, 34, 106, -128, 46, -89, -3, 108, -96, -90, 41, 95, 75, -30, -114, 126, -113, 26, -57, -39, -10]
-sm2 ver2 = true
-	 * */
 	public static void main(String[] args) {
-		signTest();
-		sm2Test();
+//		signTest();
+//		sm2Test();
 //		getBytes();
-//		costTest();
-//		signCostTest();
+		costTest();
+		signCostTest();
+		
+
+//		BigInteger P = new BigInteger("115792089210356248756420345214020892766250353991924191454421193933289684991999");
+//		BigInteger N = new BigInteger("115792089210356248756420345214020892766061623724957744567843809356293439045923");
+//		BigInteger A = new BigInteger("115792089210356248756420345214020892766250353991924191454421193933289684991996");
+//		BigInteger B = new BigInteger("18505919022281880113072981827955639221458448578012075254857346196103069175443");
+//		BigInteger Gx = new BigInteger("22963146547237050559479531362550074578802567295341616970375194840604139615431");
+//		BigInteger Gy = new BigInteger("85132369209828568825618990617112496413088388631904505083283536607588877201568");
+//		System.out.println(Arrays.toString(P.toByteArray()));
+//		System.out.println(Arrays.toString(N.toByteArray()));
+//		System.out.println(Arrays.toString(A.toByteArray()));
+//		System.out.println(Arrays.toString(B.toByteArray()));
+//		System.out.println(Arrays.toString(Gx.toByteArray()));
+//		System.out.println(Arrays.toString(Gy.toByteArray()));
 	}
 }

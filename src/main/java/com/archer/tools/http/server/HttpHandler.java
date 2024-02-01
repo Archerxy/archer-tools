@@ -27,16 +27,19 @@ public class HttpHandler extends HttpWrappedHandler {
 	@Override
 	public void handleException(HttpRequest req, HttpResponse res, Throwable t) {
 		try {
-			listener.errorOccurred(t);
+			listener.onServerException(req, res, t);
 		} catch(Exception ignore) {}
-		String body = "{" +
-				"\"server\": \"Archer Http Server Support\"," +
-				"\"time\": \"" + LocalDateTime.now().toString() + "\"," +
-				"\"status\": \"" + HttpStatus.SERVICE_UNAVAILABLE.getStatus() + "\"" +
-			"}";
-
-		res.setStatus(HttpStatus.SERVICE_UNAVAILABLE);
-		res.setContentType(ContentType.APPLICATION_JSON);
-		res.setContent(body.getBytes());
+		
+		if(res.getStatus() == null) {
+			String body = "{" +
+					"\"server\": \"Archer Http Server Support\"," +
+					"\"time\": \"" + LocalDateTime.now().toString() + "\"," +
+					"\"status\": \"" + HttpStatus.SERVICE_UNAVAILABLE.getStatus() + "\"" +
+				"}";
+			
+			res.setStatus(HttpStatus.SERVICE_UNAVAILABLE);
+			res.setContentType(ContentType.APPLICATION_JSON);
+			res.setContent(body.getBytes());
+		}
 	}
 }

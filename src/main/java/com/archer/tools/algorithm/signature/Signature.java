@@ -56,8 +56,6 @@ public class Signature {
 			byteLen = popularCurve.P.length;
 			k = new byte[byteLen];
 			rand.nextBytes(k);
-//			k = new byte[] {-71, -20, -8, 61, 50, 94, 108, -110, 28, 45, 126, 24, -88, 89, -98, 54, 111, 81, 56, -99, -30, 38, -24, 15, -10, 8, 63, -35, -51, -85, -4, 126};
-			
 			n = popularCurve.N;
 
 			if(popularCurve == PopularCurve.sm2p256v1) {
@@ -142,7 +140,6 @@ public class Signature {
 			}
 			p = popularCurve.P;
 		}
-		
 		EcPoint result = EcPoint.add(b0, b1, p);
 		if(popularCurve != null && popularCurve == PopularCurve.sm2p256v1) {
 			byte[] e = getSm2Za(pub.x, pub.y, hash);

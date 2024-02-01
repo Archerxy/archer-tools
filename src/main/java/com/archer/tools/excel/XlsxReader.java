@@ -83,7 +83,7 @@ public class XlsxReader {
 	private static final char[] TS = {'<','t','>'};
 	private static final char[] TE = {'<','/','t','>'};
 	
-	public static String[] parseStrings(byte[] data) {
+	private static String[] parseStrings(byte[] data) {
 		char[] chars = new String(data, StandardCharsets.UTF_8).toCharArray();
 		int i = 0, state = 0, countStart = 0, count = 0;
 		for(; i < chars.length; i++) {
@@ -184,7 +184,7 @@ public class XlsxReader {
 	private static final int VS_S = 3; 
 	private static final int VE_S = 4; 
 	
-	public static List<Row> parseSheet(byte[] data, String[] strs) {
+	private static List<Row> parseSheet(byte[] data, String[] strs) {
 		char[] chars = new String(data, StandardCharsets.UTF_8).toCharArray();
 		int start = 0, end = 0, state = ROWS_S;
 		boolean cStr = false;

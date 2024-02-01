@@ -59,20 +59,24 @@ public class SM3 {
 
     private static int[] convert(byte[] arr) {
         int[] out = new int[arr.length / 4];
-        byte[] tmp = new byte[4];
         for (int i = 0; i < arr.length; i += 4) {
-            System.arraycopy(arr, i, tmp, 0, 4);
-            out[i / 4] = bigEndianByteToInt(tmp);
+    		int num = 0;
+    		num |= (0x000000ff & (arr[i])) << 24;
+    		num |= (0x000000ff & (arr[i+1])) << 16;
+    		num |= (0x000000ff & (arr[i+2])) << 8;
+    		num |= (0x000000ff & (arr[i+3]));
+            out[i / 4] = num;
         }
         return out;
     }
 
     private static byte[] convert(int[] arr) {
         byte[] out = new byte[arr.length * 4];
-        byte[] tmp = null;
         for (int i = 0; i < arr.length; i++) {
-            tmp = bigEndianIntToByte(arr[i]);
-            System.arraycopy(tmp, 0, out, i * 4, 4);
+    		out[i*4] = (byte) (0xff & (arr[i] >> 24));
+    		out[i*4 + 1] = (byte) (0xff & (arr[i] >> 16));
+    		out[i*4 + 2] = (byte) (0xff & (arr[i] >> 8));
+    		out[i*4 + 3] = (byte) (0xff & (arr[i]));
         }
         return out;
     }
@@ -142,14 +146,6 @@ public class SM3 {
         return arr;
     }
 
-    private static byte[] bigEndianIntToByte(int num) {
-        return back(NumberUtil.intToBytes(num));
-    }
-
-    private static int bigEndianByteToInt(byte[] bytes) {
-        return NumberUtil.byteToInt(back(bytes));
-    }
-
     private static int FFj(int X, int Y, int Z, int j) {
         if (j >= 0 && j <= 15) {
             return FF1j(X, Y, Z);
@@ -215,17 +211,14 @@ public class SM3 {
         pos += in.length;
         System.arraycopy(pad, 0, out, pos, pad.length);
         pos += pad.length;
-        byte[] tmp = back(NumberUtil.longToBytes(n));
-        System.arraycopy(tmp, 0, out, pos, tmp.length);
-        return out;
-    }
-
-    private static byte[] back(byte[] in) {
-        byte[] out = new byte[in.length];
-        for (int i = 0; i < out.length; i++) {
-            out[i] = in[out.length - i - 1];
-        }
-
+        out[pos++] = (byte) ((n >> 56) & 0xff);
+        out[pos++] = (byte) ((n >> 48) & 0xff);
+        out[pos++] = (byte) ((n >> 40) & 0xff);
+        out[pos++] = (byte) ((n >> 32) & 0xff);
+        out[pos++] = (byte) ((n >> 24) & 0xff);
+        out[pos++] = (byte) ((n >> 16) & 0xff);
+        out[pos++] = (byte) ((n >> 8) & 0xff);
+        out[pos++] = (byte) (n & 0xff);
         return out;
     }
 
@@ -235,7 +228,7 @@ public class SM3 {
 
     private static int bitCycleLeft(int n, int bitLen) {
         bitLen %= 32;
-        byte[] tmp = bigEndianIntToByte(n);
+        byte[] tmp = NumberUtil.intToBytes(n);
         int byteLen = bitLen / 8;
         int len = bitLen % 8;
         if (byteLen > 0) {
@@ -244,8 +237,7 @@ public class SM3 {
         if (len > 0) {
             tmp = bitSmall8CycleLeft(tmp, len);
         }
-
-        return bigEndianByteToInt(tmp);
+        return NumberUtil.bytesToInt(tmp);
     }
 
     private static byte[] bitSmall8CycleLeft(byte[] in, int len) {

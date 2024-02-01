@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 import com.archer.math.MathLib;
 
-public class RSA {
+public class RSACrypto {
 	private static final int BLOCK_SIZE = 117;
 	
 	public static final int BITS = 1024;

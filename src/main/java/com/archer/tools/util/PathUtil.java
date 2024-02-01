@@ -27,11 +27,10 @@ public class PathUtil {
         }
     }
 
-    public static void mkdirs(String path) {
-        File f = new File(path);
+    public static void mkdirs(File f) {
         if(!f.exists()) {
             if(!f.mkdirs()) {
-                throw new RuntimeException("Mkdirs error,"+path);
+                throw new RuntimeException("Mkdirs error "+f.toString());
             }
         }
     }
