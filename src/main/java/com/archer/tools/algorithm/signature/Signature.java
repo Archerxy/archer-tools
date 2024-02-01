@@ -24,13 +24,20 @@ public class Signature {
 	}
 	
 	public byte[] getPublicKey(byte[] privateKey) {
-		EcPoint pub;
 		int byteLen;
 		if(curve != null) {
 			byteLen = curve.P.length;
-			pub = EcPoint.mulCurve(privateKey, curve);
 		} else {
 			byteLen = popularCurve.P.length;
+		}
+		if(privateKey.length != byteLen) {
+			throw new IllegalArgumentException("invalid privateKey");
+		}
+		
+		EcPoint pub;
+		if(curve != null) {
+			pub = EcPoint.mulCurve(privateKey, curve);
+		} else {
 			pub = EcPoint.mul(privateKey, popularCurve.id);
 		}
 		byte[] pk = new byte[byteLen << 1];
@@ -41,19 +48,26 @@ public class Signature {
 	}
 	
 	public byte[] sign(byte[] privateKey, byte[] hash) {
-		Random rand = new SecureRandom();
-		EcPoint kp;
-		byte[] k, n, r, s = null;
 		int byteLen;
 		if(curve != null) {
 			byteLen = curve.P.length;
+		} else {
+			byteLen = popularCurve.P.length;
+		}
+		if(privateKey.length != byteLen) {
+			throw new IllegalArgumentException("invalid privateKey");
+		}
+		
+		Random rand = new SecureRandom();
+		EcPoint kp;
+		byte[] k, n, r, s = null;
+		if(curve != null) {
 			k = new byte[byteLen];
 			rand.nextBytes(k);
 			n = curve.N;
 			kp = EcPoint.mulCurve(k, curve);
 			r = kp.x;
 		} else {
-			byteLen = popularCurve.P.length;
 			k = new byte[byteLen];
 			rand.nextBytes(k);
 			n = popularCurve.N;
@@ -80,7 +94,26 @@ public class Signature {
 		return result;
 	}
 	
+	public byte getV(byte[] sig) {
+		int byteLen;
+		if(curve != null) {
+			byteLen = curve.P.length;
+		} else {
+			byteLen = popularCurve.P.length;
+		}
+		if(sig.length != (byteLen << 1)) {
+			throw new IllegalArgumentException("invalid sig");
+		}
+		return (byte) (sig[sig.length - 1] & 1);
+	}
+
+/** 
+ *  Use getV(byte[] sig) instead.
+ * 
 	public byte[] signWithV(byte[] privateKey, byte[] hash) {
+		if(privateKey.length != 32) {
+			throw new IllegalArgumentException("invalid privateKey");
+		}
 		Random rand = new SecureRandom();
 		EcPoint kp;
 		byte[] k, n, r, s = null;
@@ -112,18 +145,27 @@ public class Signature {
 		result[result.length - 1] = (byte) v;
 		return result;
 	}
-	
+**/
 	
 	public boolean verify(byte[] publicKey, byte[] hash, byte[] sig) {
-		int len = sig.length >> 1, pubLen = publicKey.length >> 1;
+		int byteLen;
+		if(curve != null) {
+			byteLen = curve.P.length;
+		} else {
+			byteLen = popularCurve.P.length;
+		}
+		
+		if(publicKey.length != (byteLen << 1) && publicKey.length != (byteLen << 1) + 1) {
+			throw new IllegalArgumentException("invalid publicKey");
+		}
+		if(sig.length != (byteLen << 1)) {
+			throw new IllegalArgumentException("invalid sig");
+		}
+		int len = sig.length >> 1;
 		byte[] r = new byte[len], s = new byte[len];
 		System.arraycopy(sig, 0, r, 0, len);
 		System.arraycopy(sig, len, s, 0, len);
-		EcPoint pub = new EcPoint();
-		pub.x = new byte[pubLen];
-		pub.y = new byte[pubLen];
-		System.arraycopy(publicKey, 0, pub.x, 0, pubLen);
-		System.arraycopy(publicKey, pubLen, pub.y, 0, pubLen);
+		EcPoint pub = EcPoint.decode(publicKey);
 		byte[] p;
 		EcPoint b0, b1;
 		if(curve != null) {

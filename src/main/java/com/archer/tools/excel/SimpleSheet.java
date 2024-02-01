@@ -7,7 +7,7 @@ public class SimpleSheet {
 	
 	private String name;
 	
-	private List<List<String>> cells;
+	private List<List<String>> rows;
 
 	public SimpleSheet(String name) {
 		this.name = name;
@@ -17,12 +17,12 @@ public class SimpleSheet {
 		return name;
 	}
 
-	public List<List<String>> cells() {
-		return cells;
+	public List<List<String>> rows() {
+		return rows;
 	}
 
-	public SimpleSheet cells(List<List<String>> cells) {
-		this.cells = cells;
+	public SimpleSheet rows(List<List<String>> cells) {
+		this.rows = cells;
 		return this;
 	}
 }

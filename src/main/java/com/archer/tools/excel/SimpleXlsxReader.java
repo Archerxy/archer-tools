@@ -64,7 +64,7 @@ public class SimpleXlsxReader {
 				for(SimpleSheet s: sheets) {
 					List<List<String>> result = 
 							parseSheet(sheetConetntMap.get(s.getName()), strings);
-					s.cells(result);
+					s.rows(result);
 				}
 			}
 		}
