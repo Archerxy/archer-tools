@@ -1,5 +1,5 @@
 # archer-tools
-useful tools written with pure java, ecdsa, sm2, sm3, encryption, excel reader, http(s) client and server etc.
+Useful tools written with pure java. Includes ecdsa, sm2, sm3, encryption, excel reader, http(s) client and server etc.
 
 ## Digital signatures  
 ``` java  
