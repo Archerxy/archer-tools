@@ -3,7 +3,7 @@ package com.archer.tools.algorithm.hash;
 
 import java.util.Arrays;
 
-import com.archer.tools.util.NumberUtil;
+import com.archer.tools.number.NumberUtil;
 
 public class SM3 {
     private static final int BUFFER_LENGTH = 64;

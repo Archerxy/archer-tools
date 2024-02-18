@@ -1,9 +1,9 @@
-package com.archer.tools.util;
+package com.archer.tools.number;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
-public class NumberUtil {
+public final class NumberUtil {
 	
 	private static final int DEFAULT_BYTE = 0x7f;
 	
@@ -37,25 +37,6 @@ public class NumberUtil {
 			out[i>>1] = (byte) ((hexToByteTable[c1]<<4)|hexToByteTable[c2]);
 		}
 		return out;
-	}
-
-	public static long hexStrToRad(String hexStr) {
-		if(null == hexStr || hexStr.isEmpty()) {
-			return 0;
-		}
-		String hex = hexStr.toLowerCase();
-		if (hex.startsWith("0x")) {
-			hex = hex.substring(2);
-		}
-		long ret = 0;
-		for(int i = 0; i < hex.length(); i++) {
-			char c = hex.charAt(i);
-			if(c < 0 || c > 128 ||  hexToByteTable[c] == DEFAULT_BYTE ) {
-				throw new RuntimeException("Invalid hex string, "+hexStr);
-			}
-			ret += ret * 16 + hexToByteTable[c];
-		}
-		return ret;
 	}
 
 	public static String bytesToHexStr(byte[] bs) {

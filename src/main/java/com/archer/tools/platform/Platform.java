@@ -1,11 +1,5 @@
 package com.archer.tools.platform;
 
-
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public final class Platform {
     public static final int UNSPECIFIED = -1;
     public static final int MAC = 0;
@@ -21,29 +15,16 @@ public final class Platform {
     public static final int KFREEBSD = 10;
     public static final int NETBSD = 11;
 
-    /** Whether read-only (final) fields within Structures are supported. */
     public static final boolean RO_FIELDS;
-    /** Whether this platform provides NIO Buffers. */
     public static final boolean HAS_BUFFERS;
-    /** Whether this platform provides the AWT Component class; also false if
-     * running headless.
-     */
     public static final boolean HAS_AWT;
-    /** Whether this platform supports the JAWT library. */
     public static final boolean HAS_JAWT;
-    /** Canonical name of this platform's math library. */
     public static final String MATH_LIBRARY_NAME;
-    /** Canonical name of this platform's C runtime library. */
     public static final String C_LIBRARY_NAME;
-    /** Whether in-DLL callbacks are supported. */
     public static final boolean HAS_DLL_CALLBACKS;
-    /** Canonical resource prefix for the current platform.  This value is
-     * used to load bundled native libraries from the class path.
-     */
     public static final String RESOURCE_PREFIX;
 
     private static final int osType;
-    /** Current platform architecture. */
     public static final String ARCH;
 
     static {
@@ -51,7 +32,6 @@ public final class Platform {
         if (osName.startsWith("Linux")) {
             if ("dalvik".equals(System.getProperty("java.vm.name").toLowerCase())) {
                 osType = ANDROID;
-                // Native libraries on android must be bundled with the APK
                 System.setProperty("jna.nounpack", "true");
             }
             else {
@@ -95,12 +75,7 @@ public final class Platform {
         try {
             Class.forName("java.nio.Buffer");
             hasBuffers = true;
-        }
-        catch(ClassNotFoundException e) {
-        }
-        // NOTE: we used to do Class.forName("java.awt.Component"), but that
-        // has the unintended side effect of actually loading AWT native libs,
-        // which can be problematic
+        } catch(ClassNotFoundException ignore) {}
         HAS_AWT = osType != WINDOWSCE && osType != ANDROID && osType != AIX;
         HAS_JAWT = HAS_AWT && osType != MAC;
         HAS_BUFFERS = hasBuffers;
@@ -108,7 +83,6 @@ public final class Platform {
         C_LIBRARY_NAME = osType == WINDOWS ? "msvcrt" : osType == WINDOWSCE ? "coredll" : "c";
         MATH_LIBRARY_NAME = osType == WINDOWS ? "msvcrt" : osType == WINDOWSCE ? "coredll" : "m";
         ARCH = getCanonicalArchitecture(System.getProperty("os.arch"), osType);
-        // Windows aarch64 callbacks disabled via ASMFN_OFF (no mingw support)
         HAS_DLL_CALLBACKS = osType == WINDOWS && !ARCH.startsWith("aarch");
         RESOURCE_PREFIX = getNativeLibraryResourcePrefix();
     }
@@ -131,7 +105,6 @@ public final class Platform {
     public static final boolean isWindowsCE() {
         return osType == WINDOWSCE;
     }
-    /** Returns true for any windows variant. */
     public static final boolean isWindows() {
         return osType == WINDOWS || osType == WINDOWSCE;
     }
@@ -233,39 +206,12 @@ public final class Platform {
         else if ("zarch_64".equals(arch)) {
             arch = "s390x";
         }
-        // Work around OpenJDK mis-reporting os.arch
-        // https://bugs.openjdk.java.net/browse/JDK-8073139
         if ("ppc64".equals(arch) && "little".equals(System.getProperty("sun.cpu.endian"))) {
             arch = "ppc64le";
         }
-        // Map arm to armel if the binary is running as softfloat build
-        if("arm".equals(arch) && platform == Platform.LINUX && isSoftFloat()) {
-            arch = "armel";
-        }
-
         return arch;
     }
 
-    static boolean isSoftFloat() {
-        try {
-            File self = new File("/proc/self/exe");
-            if (self.exists()) {
-                ELFAnalyser ahfd = ELFAnalyser.analyse(self.getCanonicalPath());
-                return ! ahfd.isArmHardFloat();
-            }
-        } catch (IOException ex) {
-            // asume hardfloat
-            Logger.getLogger(Platform.class.getName()).log(Level.INFO, "Failed to read '/proc/self/exe' or the target binary.", ex);
-        } catch (SecurityException ex) {
-            // asume hardfloat
-            Logger.getLogger(Platform.class.getName()).log(Level.INFO, "SecurityException while analysing '/proc/self/exe' or the target binary.", ex);
-        }
-        return false;
-    }
-
-    /** Generate a canonical String prefix based on the current OS
-        type/arch/name.
-    */
     static String getNativeLibraryResourcePrefix() {
         String prefix = System.getProperty("jna.prefix");
         if(prefix != null) {
@@ -275,12 +221,6 @@ public final class Platform {
         }
     }
 
-    /** Generate a canonical String prefix based on the given OS
-        type/arch/name.
-        @param osType from {@link #getOSType()}
-        @param arch from <code>os.arch</code> System property
-        @param name from <code>os.name</code> System property
-    */
     static String getNativeLibraryResourcePrefix(int osType, String arch, String name) {
         String osPrefix;
         arch = getCanonicalArchitecture(arch, osType);
