@@ -1,4 +1,4 @@
-package com.archer.tools.number;
+package com.archer.tools.java;
 
 import java.math.BigInteger;
 import java.util.Arrays;

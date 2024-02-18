@@ -8,7 +8,7 @@ import com.archer.net.http.HttpResponse;
 import com.archer.net.http.HttpStatus;
 import com.archer.net.http.HttpWrappedHandler;
 
-public class HttpHandler extends HttpWrappedHandler {
+final class HttpHandler extends HttpWrappedHandler {
 	
 	private static final String DEFAULT_ENCODING = "utf-8";
 	private HttpListener listener;

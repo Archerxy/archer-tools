@@ -106,11 +106,5 @@ public class RSACrypto {
 		public byte[] getPrivateKey() {
 			return privateKey;
 		}
-		public void setPublicKey(byte[] publicKey) {
-			this.publicKey = publicKey;
-		}
-		public void setPrivateKey(byte[] privateKey) {
-			this.privateKey = privateKey;
-		}
 	}
 }
