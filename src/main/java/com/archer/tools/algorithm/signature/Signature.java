@@ -190,6 +190,185 @@ public class Signature {
 		return MathLib.cmp(MathLib.mod(result.x, p), removePrefixZero(r)) == 0;
 	}
 	
+
+    static byte[] getDL(int length) {
+        if (length < 128) {
+            return new byte[] {(byte) length};
+        } else {
+            byte[] stack = new byte[5];
+            int pos = stack.length;
+            do {
+                stack[--pos] = (byte)length;
+                length >>>= 8;
+            } while (length != 0);
+            stack[--pos] = (byte)(0x80 | (stack.length - pos));
+            
+            return Arrays.copyOfRange(stack, pos, stack.length);
+        }
+    }
+    
+    public byte[] toASN1Encoded(byte[] sig) {
+		int byteLen;
+		if(curve != null) {
+			byteLen = curve.P.length;
+		} else {
+			byteLen = popularCurve.P.length;
+		}
+		if(sig == null || sig.length != (byteLen << 1)) {
+			throw new IllegalArgumentException("invalid signature");
+		}
+		int idx = 0;
+		byte[] r = new byte[0], s = new byte[0];
+		for(int c = 0; c < 2; c++) {
+			if(-128 <= sig[c * byteLen] && sig[c * byteLen] < 0) {
+				if(c == 0) {
+					r = new byte[byteLen + 1];
+					System.arraycopy(sig, 0, r, 1, byteLen);
+				} else {
+					s = new byte[byteLen + 1];
+					System.arraycopy(sig, byteLen, s, 1, byteLen);
+				}
+			} else {
+				idx = c * byteLen;
+				while(idx < ((c + 1) * byteLen) && sig[idx] == 0) {
+					idx++;
+				}
+				if(idx >= ((c + 1) * byteLen)) {
+					throw new IllegalArgumentException("invalid signature");
+				}
+				if(-128 <= sig[idx] && sig[idx] < 0) {
+					if(c == 0) {
+						r = new byte[byteLen - idx + 1];
+						System.arraycopy(sig, idx, r, 1, byteLen - idx);
+					} else {
+						s = new byte[(2 * byteLen) - idx + 1];
+						System.arraycopy(sig, idx, s, 1, (2 * byteLen) - idx);
+					}
+				} else {
+					if(c == 0) {
+						r = new byte[byteLen - idx];
+						System.arraycopy(sig, idx, r, 0, byteLen - idx);
+					} else {
+						s = new byte[(2 * byteLen) - idx];
+						System.arraycopy(sig, idx, s, 0, (2 * byteLen) - idx);
+					}
+				}
+			}	
+		}
+    	byte[] rLenBs = getDL(r.length), sLenBs = getDL(s.length);
+    	int totalLen = 1 + rLenBs.length + r.length + 1 + sLenBs.length + s.length;
+    	byte[] totalLenBs = getDL(totalLen);
+    	
+    	int off = 0;
+    	byte[] bs = new byte[1 + totalLenBs.length + totalLen];
+    	
+    	// 1byte
+    	bs[off++] = 32 | 16;
+    	
+    	System.arraycopy(totalLenBs, 0, bs, off, totalLenBs.length);
+    	off += totalLenBs.length;
+
+    	//1byte
+    	bs[off++] = 2;
+
+    	//len bytes
+    	System.arraycopy(rLenBs, 0, bs, off, rLenBs.length);
+    	off += rLenBs.length;
+    	
+    	//r bytes
+    	System.arraycopy(r, 0, bs, off, r.length);
+    	off += r.length;
+    	
+
+    	//1byte
+    	bs[off++] = 2;
+
+    	//len bytes
+    	System.arraycopy(sLenBs, 0, bs, off, sLenBs.length);
+    	off += sLenBs.length;
+    	
+    	//r bytes
+    	System.arraycopy(s, 0, bs, off, s.length);
+    	off += s.length;
+    	
+    	return bs;
+    }
+    
+    public byte[] decodeASN1(byte[] asn1Sig) {
+		int byteLen;
+		if(curve != null) {
+			byteLen = curve.P.length;
+		} else {
+			byteLen = popularCurve.P.length;
+		}
+		
+	
+    	int off = 0;
+    	if(asn1Sig[off++] != (32 | 16)) {
+			throw new IllegalArgumentException("invalid asn1 signature");
+    	}
+    	int totalLenLen = 1, totalLen = 0;  
+    	for(; totalLenLen < 4; totalLenLen++) {
+    		for(int i = off; i < off + totalLenLen; i++) {
+    			totalLen = (totalLen << 8) | asn1Sig[i];
+    		}
+    		if(totalLen == asn1Sig.length - 1 - totalLenLen) {
+    			off += totalLenLen;
+    			break;
+    		}
+    	}
+    	if(totalLen == 0) {
+			throw new IllegalArgumentException("invalid asn1 signature");
+    	}
+    	byte[] sig = new byte[byteLen << 1];
+    	
+    	int lenLen = 1;
+    	if(byteLen >= (2 << 24)) {
+    		lenLen = 4;
+    	} else if(byteLen >= (2 << 16)) {
+    		lenLen = 3;
+    	} else if(byteLen >= (2 << 8)) {
+    		lenLen = 2;
+    	}
+    	//r
+    	if(asn1Sig[off++] != 2) {
+			throw new IllegalArgumentException("invalid asn1 signature");
+    	}
+    	int rLen = 0;
+    	for(int i = off; i < off + lenLen; i++) {
+    		rLen = (rLen << 8) | asn1Sig[i];
+		}
+    	if(rLen == 0) {
+			throw new IllegalArgumentException("invalid asn1 signature");
+    	}
+    	off += lenLen;
+    	if(rLen > byteLen) {
+        	System.arraycopy(asn1Sig, off + rLen - byteLen, sig, 0, byteLen);
+    	} else {
+        	System.arraycopy(asn1Sig, off, sig, byteLen - rLen, rLen);
+    	}
+    	off += rLen;
+    	
+
+    	//s
+    	if(asn1Sig[off++] != 2) {
+			throw new IllegalArgumentException("invalid asn1 signature");
+    	}
+    	int sLen = 0;
+    	for(int i = off; i < off + lenLen; i++) {
+    		sLen = (sLen << 8) | asn1Sig[i];
+		}
+    	if(sLen == 0) {
+			throw new IllegalArgumentException("invalid asn1 signature");
+    	}
+    	off += lenLen;
+    	if(sLen > byteLen) {
+        	System.arraycopy(asn1Sig, off + sLen - byteLen, sig, byteLen, byteLen);
+    	} else {
+        	System.arraycopy(asn1Sig, off, sig, sig.length - sLen, sLen);
+    	}
+    	return sig;
+    }
 	
 	byte[] removePrefixZero(byte[] in) {
 		int off = 0;
