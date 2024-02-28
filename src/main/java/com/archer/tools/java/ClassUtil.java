@@ -22,10 +22,15 @@ public class ClassUtil {
 	public static final String CLASS_FILE_SUFFIX = ".class";
 	
 	private static Map<Class<?>, Field[]> fieldsCache = new ConcurrentHashMap<>(96);
+	private static Map<Class<?>, ConstructorStuff> constructorCache = new ConcurrentHashMap<>(96);
+	private static List<Class<?>> allClasses;
 
-
-	public static List<Class<?>> listAllClasses() {
-		List<Class<?>> classes = new LinkedList<>();
+	public static synchronized List<Class<?>> listAllClasses() {
+		if(allClasses != null) {
+			return allClasses;
+		} else {
+			allClasses = new LinkedList<>();
+		}
 		ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (classLoader instanceof URLClassLoader) {
             URL[] urls = ((URLClassLoader) classLoader).getURLs();
@@ -33,15 +38,15 @@ public class ClassUtil {
             	String path = url.getPath();
             	try {
                 	if(new File(path).isDirectory()) {
-                		classes.addAll(getClassesFromPath(path, null));
+                		allClasses.addAll(getClassesFromPath(path, null));
                 	} else if(path.endsWith(".jar")) {
-                		classes.addAll(getClassesFromJar(path));
+                		allClasses.addAll(getClassesFromJar(path));
                 	}
             	} catch(Exception ignore) {}
             }
         }
         
-        return classes;
+        return allClasses;
 	}
 
 	public static List<Class<?>> getClassesFromPath(String path, String parentPkg) {
@@ -107,13 +112,31 @@ public class ClassUtil {
 		return className.substring(lastDotIndex + 1) + CLASS_FILE_SUFFIX;
 	}
  
-    public static Object newInstance(Class<?> cls) {
+	public static Object newInstance(Class<?> cls) {
+    	ConstructorStuff stuff = constructorCache.getOrDefault(cls, null);
+    	if(stuff != null) {
+			try {
+	    		return stuff.constructor.newInstance(stuff.params);
+			} catch (Exception e) {
+				throw new RuntimeException("can not construct class '" +
+						cls.getName() + "'", e);
+			}
+    	}
 		int paramCount = cls.isMemberClass() ? 1 : 0;
-		Constructor<?>[] constructors = cls.getConstructors();
+		Constructor<?>[] constructors = cls.getDeclaredConstructors();
 		for(Constructor<?> constructor : constructors) {
+			Object[] params = null;
+			if(constructor.getParameterCount() == 0) {
+				params = new Object[0];
+			}
 			if(constructor.getParameterCount() == paramCount) {
-				Object[] params = new Object[paramCount];
+				params = new Object[paramCount];
+			}
+			if(params != null) {
+				stuff = new ConstructorStuff(constructor, params);
+				constructorCache.put(cls, stuff);
 				try {
+					constructor.setAccessible(true);
 					return constructor.newInstance(params);
 				} catch (Exception e) {
 					throw new RuntimeException("can not construct class '" +
@@ -147,10 +170,21 @@ public class ClassUtil {
 				continue ;
 			}
     		if(f.getType().isAssignableFrom(srcF.getClass())) {
+    			f.setAccessible(true);
 				f.set(ins, srcF);
     		}
     	}
     	return ins;
+    }
+    
+    
+    static class ConstructorStuff {
+    	private Constructor<?> constructor;
+    	private Object[] params;
+		public ConstructorStuff(Constructor<?> constructor, Object[] params) {
+			this.constructor = constructor;
+			this.params = params;
+		}
     }
 }
 
