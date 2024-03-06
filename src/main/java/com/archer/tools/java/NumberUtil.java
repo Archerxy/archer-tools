@@ -74,6 +74,13 @@ public final class NumberUtil {
 		return bs;
 	}
 
+	public static void intToBytes(int num, byte[] bytes, int off) {
+		bytes[off++] = (byte) (0xff & (num >> 24));
+		bytes[off++] = (byte) (0xff & (num >> 16));
+		bytes[off++] = (byte) (0xff & (num >> 8));
+		bytes[off] = (byte) (0xff & (num));
+	}
+	
 	public static byte[] intToBytes(int num) {
 		byte[] bytes = new byte[4];
 		bytes[0] = (byte) (0xff & (num >> 24));
@@ -82,19 +89,17 @@ public final class NumberUtil {
 		bytes[3] = (byte) (0xff & (num));
 		return bytes;
 	}
-
+	
+    public static int bytesToInt(byte[] bs, int off) {
+        int n = bs[off] << 24;
+        n |= (bs[++off] & 0xff) << 16;
+        n |= (bs[++off] & 0xff) << 8;
+        n |= (bs[++off] & 0xff);
+        return n;
+    }
+    
 	public static int bytesToInt(byte[] bytes) {
-		int num = 0;
-		int temp;
-		temp = (0x000000ff & (bytes[0])) << 24;
-		num = num | temp;
-		temp = (0x000000ff & (bytes[1])) << 16;
-		num = num | temp;
-		temp = (0x000000ff & (bytes[2])) << 8;
-		num = num | temp;
-		temp = (0x000000ff & (bytes[3]));
-		num = num | temp;
-		return num;
+		return bytesToInt(bytes, 0);
 	}
 
 	public static byte[] longToBytes(long num) {
