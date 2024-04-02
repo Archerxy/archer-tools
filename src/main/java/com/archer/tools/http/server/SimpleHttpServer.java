@@ -1,8 +1,8 @@
 package com.archer.tools.http.server;
 
-import com.archer.net.EventLoop;
+import com.archer.net.HandlerList;
 import com.archer.net.ServerChannel;
-import com.archer.net.SslContext;
+import com.archer.net.ssl.SslContext;
 
 public class SimpleHttpServer {
 	
@@ -17,14 +17,14 @@ public class SimpleHttpServer {
 		this.sslOption = sslOption;
 	}
 	
-	public void listen(int port, HttpListener listener) throws HttpServerException {
-		EventLoop loop = new EventLoop();
-		loop.addHandlers(new HttpHandler(listener));
+	public void listen(String host, int port, HttpListener listener) throws HttpServerException {
+		HandlerList handlerList = new HandlerList();
+		handlerList.add(new HttpHandler(listener));
 		if(sslOption != null) {
 			if(sslOption.getCert() == null || sslOption.getKey() == null) {
 				throw new HttpServerException("certificate and privateKey is required");
 			}
-			SslContext opt = new SslContext()
+			SslContext opt = new SslContext(false, false)
 					.useCertificate(sslOption.getCert(), sslOption.getKey());
 			if(sslOption.getCa() != null) {
 				opt.trustCertificateAuth(sslOption.getCa());
@@ -36,8 +36,8 @@ public class SimpleHttpServer {
 		} else {
 			server = new ServerChannel();
 		}
-		server.eventLoop(loop);
-		server.listen(port);
+		server.handlerList(handlerList);
+		server.listen(host, port);
 	}
 	
 	public void destroy() {
