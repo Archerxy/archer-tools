@@ -9,7 +9,6 @@ import java.util.Random;
 
 import com.archer.math.MathLib;
 import com.archer.tools.algorithm.hash.SHA256;
-import com.archer.tools.algorithm.hash.SHA512;
 
 
 public class RSAPsi {
@@ -96,7 +95,7 @@ public class RSAPsi {
 		for(byte[] s: set) {
 			byte[] h = SHA256.hash(s);
 			byte[] b = MathLib.powm(h, d, n);
-			bSet.add(SHA512.hash(b));
+			bSet.add(b);
 		}
 		return new Pair(zSet, bSet);
 	}
@@ -122,7 +121,7 @@ public class RSAPsi {
 		i = 0;
 		for(byte[] z: zSet) {
 			byte[] a = MathLib.mulInvm(z, rArr[i++], n);
-			aSet.add(SHA512.hash(a));
+			aSet.add(a);
 		}
 		return aSet;
 	}
