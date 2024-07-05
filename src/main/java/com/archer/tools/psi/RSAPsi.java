@@ -153,26 +153,23 @@ public class RSAPsi {
 	 * */
 	static class Intersection {
 		
-		private static final int P = 128;
+		private static final int P = 32;
+		private static final int C = 23;
 		
 		N[] map;
-		byte[] bloom = new byte[64];
 		
 		//512 bits input
 		public Intersection(List<byte[]> set) {
 			int m = set.size() / P + 1;
 			map = new N[m];
 			for(byte[] s: set) {
-				for(int i = 0; i < bloom.length; i++) {
-					bloom[i] = (byte) (bloom[i] | s[i]);
-				}
 				long p = 0;
-				for(int i = 0; i < 7; i++) {
+				for(int i = 0; i < C; i++) {
 					long l = (long) s[i];
 					if(l < 0) {
 						l += 256;
 					}
-					p |= (l << ((6 - i) << 3));
+					p |= (l << ((C - i) << 3));
 				}
 				int r = (int) (p % m);
 				if(map[r] == null) {
@@ -187,33 +184,30 @@ public class RSAPsi {
 		}
 		
 		public boolean contains(byte[] bs) {
-			for(int i = 0; i < bloom.length; i++) {
-				if(bloom[i] == 0 && bs[i] == 1) {
-					return false;
-				}
-			}
 			long p = 0;
-			for(int i = 0; i < 7; i++) {
+			for(int i = 0; i < C; i++) {
 				long l = (long) bs[i];
 				if(l < 0) {
 					l += 256;
 				}
-				p |= (l << ((6 - i) << 3));
+				p |= (l << ((C - i) << 3));
 			}
 			int m = map.length;
 			int r = (int) (p % m);
 			N cur = map[r];
 			while(cur != null) {
 				byte[] d = cur.data;
-				boolean ok = true;
-				for(int i = 0; i < bloom.length; i++) {
-					if(d[i] != bs[i]) {
-						ok = false;
-						break; 
+				if(d.length == bs.length) {
+					boolean ok = true;
+					for(int i = 0; i < bs.length; i++) {
+						if(d[i] != bs[i]) {
+							ok = false;
+							break; 
+						}
 					}
-				}
-				if(ok) {
-					return true;
+					if(ok) {
+						return true;
+					}
 				}
 				cur = cur.last;
 			}
