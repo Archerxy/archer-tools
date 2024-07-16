@@ -171,6 +171,9 @@ public class RSAPsi {
 					}
 					p |= (l << ((C - i) << 3));
 				}
+				if(p < 0) {
+					p = -p;
+				}
 				int r = (int) (p % m);
 				if(map[r] == null) {
 					map[r] = new N(s);
@@ -191,6 +194,9 @@ public class RSAPsi {
 					l += 256;
 				}
 				p |= (l << ((C - i) << 3));
+			}
+			if(p < 0) {
+				p = -p;
 			}
 			int m = map.length;
 			int r = (int) (p % m);
