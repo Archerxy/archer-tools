@@ -64,7 +64,7 @@ public class MultiRSAPsi {
 		for(int i = 0; i < block; i++) {
 			blocks.add(new Pair(uSet.subList(i * uNum, (i + 1) * uNum), set.subList(i * pNum, (i + 1) * pNum)));
 		}
-		blocks.add(new Pair(uSet.subList(uNum * block, set.size()), set.subList(pNum * block, set.size())));
+		blocks.add(new Pair(uSet.subList(uNum * block, uSet.size()), set.subList(pNum * block, set.size())));
 		List<Task> tasks = new ArrayList<>(blocks.size());
 		for(Pair p: blocks) {
 			Task t = new Task() {
@@ -88,11 +88,11 @@ public class MultiRSAPsi {
 	 * return psiSet
 	 * */
 	public static ArrayList<byte[]> serverSend2(byte[] pk, List<byte[]> zSet, List<byte[]> bSet, List<byte[]> rSet) {
-		int size = zSet.size(), rSize = rSet.size();
-		int pNum = getThreadNum(size);
+		int zSize = zSet.size(), rSize = rSet.size();
+		int pNum = getThreadNum(zSize);
 		ThreadPoolExecutor pool = new ThreadPoolExecutor(pNum, pNum, ALIVE, TimeUnit.MILLISECONDS, 
 				new LinkedBlockingQueue<>(), new InnerThreadFactory(T_NAME));
-		int block = size / pNum;
+		int block = zSize / pNum;
 		int rNum = rSize / block;
 		ArrayList<Pair> blocks = new ArrayList<>(block + 1);
 		for(int i = 0; i < block; i++) {
