@@ -61,11 +61,15 @@ public class RSAPsi {
 		byte[] e = Arrays.copyOfRange(pk, BYTES, BYTES << 1);
 		ArrayList<byte[]> uSet = new ArrayList<>(set.size());
 		ArrayList<byte[]> rSet = new ArrayList<>(set.size());
+
 		Random rand = new Random();
+		byte[] ran = new byte[RAND_LEN];
+		rand.nextBytes(ran);
 		for(byte[] s: set) {
 			byte[] h = SHA256.hash(s);
 			byte[] r = new byte[RAND_LEN];
-			rand.nextBytes(r);
+			System.arraycopy(ran, 0, r, 0, RAND_LEN);
+			
 			rSet.add(r);
 			byte[] u = MathLib.mulm(h, MathLib.powm(r, e, n), n);
 			uSet.add(u);
