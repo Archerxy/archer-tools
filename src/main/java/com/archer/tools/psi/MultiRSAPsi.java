@@ -138,16 +138,13 @@ public class MultiRSAPsi {
 			p = 2;
 		}
 		int count = size / p;
-		if(count > 5120) {
-			return p * 4;
-		}
-		if(count > 2560) {
+		if(count > 10240) {
 			return p * 2;
 		}
-		if(count > 1280) {
+		if(count > 5120) {
 			return p;
 		}
-		if(count > 640) {
+		if(count > 2560) {
 			return 2;
 		}
 		return 1;
