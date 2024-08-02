@@ -142,4 +142,17 @@ class JSONNioRequest {
 		}
 		return new String(res.getBody(), option.getEncoding());
 	}
+	
+	public static String request(String method, String httpUrl, String body, Options option) 
+			throws IOException {
+		if(option == null) {
+			option = new Options();
+		}
+		NioResponse res = NioRequest.request(method, httpUrl, body.getBytes(option.getEncoding()), option);
+		if(res.getStatusCode() != NioResponse.HTTP_OK) {
+			throw new HttpException(res.getStatusCode(), res.getStatus());
+		}
+		return new String(res.getBody(), option.getEncoding());
+	}
 }
+

@@ -144,4 +144,18 @@ public class JSONRequest {
 		}
 		return resBody;
 	}
+	
+	public static String request(String method, String httpUrl, String body, Options option) 
+			throws UnsupportedEncodingException, XJSONException {
+		if(option == null) {
+			option = new Options();
+		}
+		NativeResponse res = NativeRequest.request(method, httpUrl, body.getBytes(option.getEncoding()), option);
+		String resBody = new String(res.getBody(), option.getEncoding());
+		if(res.getStatusCode() != NativeResponse.HTTP_OK) {
+			throw new HttpException(res.getStatusCode(), resBody);
+		}
+		return resBody;
+	}
 }
+
