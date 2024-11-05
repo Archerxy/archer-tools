@@ -11,9 +11,11 @@ import com.archer.tools.algorithm.hash.SM3;
 
 public class Signature {
 	
-	PopularCurve popularCurve;
+	private PopularCurve popularCurve;
 	
-	Curve curve;
+	private Curve curve;
+
+	private Random rand = new SecureRandom();
 	
 	public Signature(PopularCurve curve) {
 		this.popularCurve = curve;
@@ -42,8 +44,8 @@ public class Signature {
 		}
 		byte[] pk = new byte[byteLen << 1];
 
-		System.arraycopy(pub.x, 0, pk, byteLen - pub.x.length, pub.x.length);
-		System.arraycopy(pub.y, 0, pk, pk.length - pub.y.length, pub.y.length);
+		System.arraycopy(pub.getX(), 0, pk, byteLen - pub.getX().length, pub.getX().length);
+		System.arraycopy(pub.getY(), 0, pk, pk.length - pub.getY().length, pub.getY().length);
 		return pk;
 	}
 	
@@ -58,7 +60,6 @@ public class Signature {
 			throw new IllegalArgumentException("invalid privateKey");
 		}
 		
-		Random rand = new SecureRandom();
 		EcPoint kp;
 		byte[] k, n, r, s = null;
 		if(curve != null) {
@@ -66,7 +67,7 @@ public class Signature {
 			rand.nextBytes(k);
 			n = curve.N;
 			kp = EcPoint.mulCurve(k, curve);
-			r = kp.x;
+			r = kp.getX();
 		} else {
 			k = new byte[byteLen];
 			rand.nextBytes(k);
@@ -74,11 +75,11 @@ public class Signature {
 
 			if(popularCurve == PopularCurve.sm2p256v1) {
 				EcPoint rs = smCalRS(privateKey, hash);
-				r = rs.x;
-				s = rs.y;
+				r = rs.getX();
+				s = rs.getY();
 			} else {
 				kp = EcPoint.mul(k, popularCurve.id);
-				r = kp.x;
+				r = kp.getX();
 			}
 		}
 		if(popularCurve == null || popularCurve != PopularCurve.sm2p256v1) {
@@ -94,58 +95,44 @@ public class Signature {
 		return result;
 	}
 	
-	public byte getV(byte[] sig) {
+	public byte[] signWithV(byte[] privateKey, byte[] hash) {
 		int byteLen;
 		if(curve != null) {
 			byteLen = curve.P.length;
 		} else {
 			byteLen = popularCurve.P.length;
 		}
-		if(sig.length != (byteLen << 1)) {
-			throw new IllegalArgumentException("invalid sig");
-		}
-		return (byte) (sig[sig.length - 1] & 1);
-	}
-
-/** 
- *  Use getV(byte[] sig) instead.
- * 
-	public byte[] signWithV(byte[] privateKey, byte[] hash) {
-		if(privateKey.length != 32) {
+		if(privateKey.length != byteLen) {
 			throw new IllegalArgumentException("invalid privateKey");
 		}
-		Random rand = new SecureRandom();
+		
 		EcPoint kp;
 		byte[] k, n, r, s = null;
-		int byteLen;
+		k = new byte[byteLen];
+		rand.nextBytes(k);
 		if(curve != null) {
-			byteLen = curve.P.length;
-			k = new byte[byteLen];
-			rand.nextBytes(k);
 			n = curve.N;
 			kp = EcPoint.mulCurve(k, curve);
-			r = kp.x;
 		} else {
-			byteLen = popularCurve.P.length;
-			k = new byte[byteLen];
-			rand.nextBytes(k);
 			n = popularCurve.N;
 			kp = EcPoint.mul(k, popularCurve.id);
-			r = kp.x;
 		}
+		r = kp.getX();
+		int odd = kp.getY()[kp.getY().length - 1];
+		odd = ((odd < 0) ? (odd + 256) : odd) & 1;
+		
 		s = MathLib.mulInvm(MathLib.add(hash, MathLib.mul(privateKey, r)), k, n);
-		int v = s[s.length - 1] & 1, cmp = MathLib.cmp(MathLib.mul(s, 2), n);
-		if(cmp >= 0) {
+		if(MathLib.cmp(MathLib.mul(s, 2), n) > 0) {
 			s = MathLib.sub(n, s);
-			v ^= 1;
+			odd ^= 1;
 		}
-		byte[] result = new byte[byteLen << 1 + 1];
+		byte[] result = new byte[(byteLen << 1) + 1];
 		System.arraycopy(r, 0, result, byteLen - r.length, r.length);
-		System.arraycopy(s, 0, result, result.length - s.length, s.length);
-		result[result.length - 1] = (byte) v;
+		System.arraycopy(s, 0, result, result.length - s.length - 1, s.length);
+		result[result.length - 1] = (byte)(odd + 27);
 		return result;
 	}
-**/
+	
 	
 	public boolean verify(byte[] publicKey, byte[] hash, byte[] sig) {
 		int byteLen;
@@ -157,6 +144,9 @@ public class Signature {
 		
 		if(publicKey.length != (byteLen << 1) && publicKey.length != (byteLen << 1) + 1) {
 			throw new IllegalArgumentException("invalid publicKey");
+		}
+		if(sig.length == (byteLen << 1) + 1) {
+			sig = Arrays.copyOfRange(sig, 0, (byteLen << 1));
 		}
 		if(sig.length != (byteLen << 1)) {
 			throw new IllegalArgumentException("invalid sig");
@@ -184,12 +174,77 @@ public class Signature {
 		}
 		EcPoint result = EcPoint.add(b0, b1, p);
 		if(popularCurve != null && popularCurve == PopularCurve.sm2p256v1) {
-			byte[] e = getSm2Za(pub.x, pub.y, hash);
-			return MathLib.cmp(MathLib.mod(MathLib.add(result.x, e), popularCurve.N), removePrefixZero(r)) == 0;
+			byte[] e = getSm2Za(pub.getX(), pub.getY(), hash);
+			return MathLib.cmp(MathLib.mod(MathLib.add(result.getX(), e), popularCurve.N), removePrefixZero(r)) == 0;
 		}
-		return MathLib.cmp(MathLib.mod(result.x, p), removePrefixZero(r)) == 0;
+		return MathLib.cmp(MathLib.mod(result.getX(), p), removePrefixZero(r)) == 0;
 	}
 	
+	public byte[] recoverToPublicKey(byte[] hash, byte[] sig) {
+		if(sig.length != 65) {
+			throw new IllegalArgumentException("Invalid signature data");
+		}
+		byte[] x = new byte[32], y, s = new byte[32];
+		System.arraycopy(sig, 0, x, 0, 32);
+		System.arraycopy(sig, 32, s, 0, 32);
+		int v = sig[64] - 27;
+		
+		y = MathLib.pow(x, 3);
+		byte[] t, p, n;
+		if(popularCurve != null && popularCurve == PopularCurve.secp256k1) {
+			// x ^ 3 + 7
+			y = MathLib.add(y, new byte[] {7});
+			MathLib.mod(y, PopularCurve.secp256k1.P);
+			t = new byte[32];
+			System.arraycopy(PopularCurve.secp256k1.P, 0, t, 0, 32);
+			t[31] += 1;
+			p = PopularCurve.secp256k1.P;
+			n = PopularCurve.secp256k1.N;
+		} else if(curve != null) {
+			byte[] ax = MathLib.mul(x, curve.A);
+			y = MathLib.add(y, ax);
+			y = MathLib.add(y, curve.B);
+			MathLib.mod(y, curve.P);
+			t = MathLib.add(curve.P, new byte[] {1});
+			p = curve.P;
+			n = curve.N;
+		} else {
+			throw new IllegalArgumentException("Invalid curve type");
+		}
+		t = MathLib.divui(t, 4);
+		y = MathLib.powm(y, t, p);
+		int odd = y[y.length - 1];
+		odd = ((odd < 0) ? (odd + 256) : odd) & 1;
+		if((v ^ odd) == 1) {
+			y = MathLib.sub(p, y);
+		}
+
+		EcPoint xy = new EcPoint();
+		xy.setX(x);
+		xy.setY(y);
+		EcPoint sxy, mxy;
+		if(popularCurve != null && popularCurve == PopularCurve.secp256k1) {
+			sxy = EcPoint.mulPoint(s, PopularCurve.secp256k1.id, xy);
+			mxy = EcPoint.mul(hash, PopularCurve.secp256k1.id);
+		} else if(curve != null) {
+			sxy = EcPoint.mulCurvePoint(s, curve, xy);
+			mxy = EcPoint.mulCurve(hash, curve);
+		} else {
+			throw new IllegalArgumentException("Invalid curve type");
+		}
+		t = MathLib.inv(x, n);
+		xy = EcPoint.sub(sxy, mxy, p);
+		if(popularCurve != null && popularCurve == PopularCurve.secp256k1) {
+			sxy = EcPoint.mulPoint(t, PopularCurve.secp256k1.id, xy);
+		} else if(curve != null) {
+			sxy = EcPoint.mulCurvePoint(t, curve, xy);
+		} else {
+			throw new IllegalArgumentException("Invalid curve type");
+		}
+		
+		return sxy.getEncoded();
+		
+	}
 
     static byte[] getDL(int length) {
         if (length < 128) {
@@ -387,17 +442,17 @@ public class Signature {
 		byte[] k = new byte[byteLen];
 		rand.nextBytes(k);
 		EcPoint pub = EcPoint.mul(privateKey, popularCurve.id);
-		byte[] e = getSm2Za(pub.x, pub.y, hash);
+		byte[] e = getSm2Za(pub.getX(), pub.getY(), hash);
 		EcPoint kp = EcPoint.mul(k, popularCurve.id);
-		kp.x = MathLib.mod(MathLib.add(kp.x, e), popularCurve.N);
-		while(MathLib.cmp(MathLib.add(kp.x, e), popularCurve.N) == 0) {
+		kp.setX(MathLib.mod(MathLib.add(kp.getX(), e), popularCurve.N));
+		while(MathLib.cmp(MathLib.add(kp.getX(), e), popularCurve.N) == 0) {
 			rand.nextBytes(k);
 			kp = EcPoint.mul(k, popularCurve.id);
-			kp.x = MathLib.mod(MathLib.add(kp.x, e), popularCurve.N);
+			kp.setX(MathLib.mod(MathLib.add(kp.getX(), e), popularCurve.N));
 		}
-		byte[] s = MathLib.subm(k, MathLib.mul(kp.x, privateKey), popularCurve.N);
+		byte[] s = MathLib.subm(k, MathLib.mul(kp.getX(), privateKey), popularCurve.N);
 		s = MathLib.mulInvm(s, MathLib.add(privateKey, 1), popularCurve.N);
-		kp.y = s;
+		kp.setY(s);
 		return kp;
 	}
 	
@@ -450,3 +505,4 @@ public class Signature {
 	}
 
 }
+
