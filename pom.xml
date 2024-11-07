@@ -32,8 +32,8 @@
   	<dependency>
 	  <groupId>com.archer</groupId>
 	  <artifactId>archer-net</artifactId>
-	  <version>1.2.2</version>
-	  <!-- url=https://github.com/Archerxy/archer-net/releases/tag/v1.2.2 -->
+	  <version>1.2.3</version>
+	  <!-- url=https://github.com/Archerxy/archer-net/releases/tag/v1.2.3 -->
 	</dependency>
   </dependencies>
   
