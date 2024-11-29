@@ -1,6 +1,10 @@
 # archer-tools
 Useful tools written with pure java. Includes ecdsa, sm2, sm3, encryption, excel reader, http(s) client and server etc.
 
+## Asm java bytecode
+see [https://github.com/Archerxy/archer-framework/blob/main/src/main/java/com/archer/framework/base/async/AsyncProxy.java]AsyncProxy.java and [https://github.com/Archerxy/archer-framework/blob/main/src/demos/com/archer/test/run/TestService.java]TestService.test1(@Async test3())
+the example shows how to use 'com.archer.tools.bytecode.ClassBytecode' for generating a child class and change the behavier of the super class  
+
 ## Digital signatures  
 ``` java  
     byte[] sk = {29, -3, 74, 47, 123, 64, 41, 123, 67, -9, 89, 16, 84, 115, 18, -8, -41, -97, -57, 36, 103, 60, 115, -123, -5, -38, -97, 127, 32, -21, -25, 2};  
