@@ -136,7 +136,10 @@ public class JSONRequest {
 		if(option == null) {
 			option = new Options();
 		}
-		byte[] data = XJSONStatic.stringify(body).getBytes(option.getEncoding());
+		byte[] data = new byte[0];
+		if(body != null) {
+			data = XJSONStatic.stringify(body).getBytes(option.getEncoding());
+		}
 		NativeResponse res = NativeRequest.request(method, httpUrl, data, option);
 		String resBody = new String(res.getBody(), option.getEncoding());
 		if(res.getStatusCode() != NativeResponse.HTTP_OK) {
@@ -150,7 +153,11 @@ public class JSONRequest {
 		if(option == null) {
 			option = new Options();
 		}
-		NativeResponse res = NativeRequest.request(method, httpUrl, body.getBytes(option.getEncoding()), option);
+		byte[] data = new byte[0];
+		if(body != null) {
+			data = body.getBytes(option.getEncoding());
+		}
+		NativeResponse res = NativeRequest.request(method, httpUrl, data, option);
 		String resBody = new String(res.getBody(), option.getEncoding());
 		if(res.getStatusCode() != NativeResponse.HTTP_OK) {
 			throw new HttpException(res.getStatusCode(), resBody);
@@ -158,3 +165,4 @@ public class JSONRequest {
 		return resBody;
 	}
 }
+

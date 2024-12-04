@@ -135,7 +135,10 @@ class JSONNioRequest {
 		if(option == null) {
 			option = new Options();
 		}
-		byte[] data = XJSONStatic.stringify(body).getBytes(option.getEncoding());
+		byte[] data = new byte[0];
+		if(body != null) {
+			data = XJSONStatic.stringify(body).getBytes(option.getEncoding());
+		}
 		NioResponse res = NioRequest.request(method, httpUrl, data, option);
 		if(res.getStatusCode() != NioResponse.HTTP_OK) {
 			throw new HttpException(res.getStatusCode(), res.getStatus());
@@ -148,10 +151,15 @@ class JSONNioRequest {
 		if(option == null) {
 			option = new Options();
 		}
-		NioResponse res = NioRequest.request(method, httpUrl, body.getBytes(option.getEncoding()), option);
+		byte[] data = new byte[0];
+		if(body != null) {
+			data = body.getBytes(option.getEncoding());
+		}
+		NioResponse res = NioRequest.request(method, httpUrl, data, option);
 		if(res.getStatusCode() != NioResponse.HTTP_OK) {
 			throw new HttpException(res.getStatusCode(), res.getStatus());
 		}
 		return new String(res.getBody(), option.getEncoding());
 	}
 }
+
